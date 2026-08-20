@@ -1,5 +1,8 @@
+import os
+
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+fromm Fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
@@ -16,6 +19,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------- Proteccion anti troll ----------
+
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "nautilus")
+api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error-False)
+
+def verificar_admin(clave: str = Depends(api_key_header)):
+    if clave != ADMIN_KEY:
+        raise HTTPException(
+            status_code-403,
+            details="Requiere clave de administrador"
+        )
+    return True
+
+
 
 # ---------- Modelos ----------
 
@@ -40,7 +58,7 @@ class Error(BaseModel):
 
 DATOS_INICIALES = [
     {"id": 1, "nombre": "Juan",  "carrera": "Ingeniería"},
-    {"id": 2, "nombre": "Sofía", "carrera": "Informática"},
+    {"id": 2, "nombre": "Fernando", "carrera": "Informática"},
 ]
 
 estudiantes: List[dict] = [dict(e) for e in DATOS_INICIALES]
@@ -95,7 +113,8 @@ def eliminar_estudiante(id: int):
 
 @app.post("/admin/reset", status_code=204,
           summary="Restaurar los datos iniciales",
-          tags=["Demo"])
+          tags=["Demo"]
+          dependencies=[Depends(verificar_admin)])
 def reset():
     global estudiantes, siguiente_id
     estudiantes = [dict(e) for e in DATOS_INICIALES]
