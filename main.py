@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-fromm Fastapi.security import APIKeyHeader
+from Fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
