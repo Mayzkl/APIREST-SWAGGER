@@ -1,8 +1,8 @@
 import os
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
-fromm Fastapi.security import APIKeyHeader
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
@@ -20,20 +20,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------- Proteccion anti troll ----------
-
-ADMIN_KEY = os.environ.get("ADMIN_KEY", "nautilus")
-api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error-False)
+# ---------- Protección de endpoints destructivos ----------
+# DELETE y /admin/reset requieren esta clave (header X-Admin-Key).
+# GET, POST y PATCH quedan abiertos para que el curso participe sin fricción.
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "seminario2026")
+api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error=False)
 
 def verificar_admin(clave: str = Depends(api_key_header)):
     if clave != ADMIN_KEY:
         raise HTTPException(
-            status_code-403,
-            details="Requiere clave de administrador"
+            status_code=403,
+            detail="Requiere clave de administrador (botón Authorize arriba a la derecha).",
         )
     return True
-
-
 
 # ---------- Modelos ----------
 
@@ -58,7 +57,7 @@ class Error(BaseModel):
 
 DATOS_INICIALES = [
     {"id": 1, "nombre": "Juan",  "carrera": "Ingeniería"},
-    {"id": 2, "nombre": "Fernando", "carrera": "Informática"},
+    {"id": 2, "nombre": "Sofía", "carrera": "Informática"},
 ]
 
 estudiantes: List[dict] = [dict(e) for e in DATOS_INICIALES]
@@ -103,7 +102,8 @@ def modificar_estudiante(id: int, cambios: EstudiantePatch):
 
 @app.delete("/estudiantes/{id}", status_code=204,
             summary="Eliminar un estudiante", tags=["Estudiantes"],
-            responses={404: {"model": Error, "description": "No existe"}})
+            responses={404: {"model": Error, "description": "No existe"}},
+            dependencies=[Depends(verificar_admin)])
 def eliminar_estudiante(id: int):
     estudiante = buscar(id)
     estudiantes.remove(estudiante)
@@ -113,7 +113,7 @@ def eliminar_estudiante(id: int):
 
 @app.post("/admin/reset", status_code=204,
           summary="Restaurar los datos iniciales",
-          tags=["Demo"]
+          tags=["Demo"],
           dependencies=[Depends(verificar_admin)])
 def reset():
     global estudiantes, siguiente_id
