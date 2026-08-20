@@ -102,7 +102,7 @@ def modificar_estudiante(id: int, cambios: EstudiantePatch):
 
 @app.delete("/estudiantes/{id}", status_code=204,
             summary="Eliminar un estudiante", tags=["Estudiantes"],
-            responses={404: {"model": Error, "description": "No existe"}}),
+            responses={404: {"model": Error, "description": "No existe"}})
 def eliminar_estudiante(id: int):
     estudiante = buscar(id)
     estudiantes.remove(estudiante)
